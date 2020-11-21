@@ -1,6 +1,6 @@
 # anemia_detector
 
-Anemia  Detector app is for detecting anemia by clicking the picture of eyes
+Anemia  Detector Application is flutter based application detecting anemia from pictures of eyes, it follows some algorithms of python that is Haarcascade Eye Detection Algorithm.
 
 ## Getting Started
 

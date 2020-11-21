@@ -1,9 +1,13 @@
 // ignore: avoid_web_libraries_in_flutter
+
+//import 'dart:html';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'login_form.dart';
+import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 
 
 class AddRecord extends StatelessWidget {
@@ -79,6 +83,11 @@ class _RegistrationDetails extends State<StatefulWidget> {
   }
 //drop down value
   String _dropDownValue;
+  final Geolocator geolocator = Geolocator()..forceAndroidLocationManager;
+
+  //Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  Position _currentPosition;
+  String _currentAddress;
 
   @override
 
@@ -87,6 +96,8 @@ class _RegistrationDetails extends State<StatefulWidget> {
     TextEditingController name_Controller = TextEditingController();
     TextEditingController age_Controller = TextEditingController();
     TextEditingController occupation_Controller = TextEditingController();
+    TextEditingController address_Controller = TextEditingController();
+
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -179,7 +190,7 @@ class _RegistrationDetails extends State<StatefulWidget> {
               style: TextStyle(
                 fontSize: 15.0,
               ),
-              controller: name_Controller,
+              controller: address_Controller,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
                 contentPadding: EdgeInsets.all(10),
@@ -310,6 +321,38 @@ class _RegistrationDetails extends State<StatefulWidget> {
                 }
                 return null;
               },
+            ),
+            Container(
+              padding: EdgeInsets.only(top: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: <Widget>[
+                  Text('अपना लोकेशन/ GPS चालू करें '),
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.only(top: 5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  if (_currentPosition != null) Text(_currentAddress),
+                  RaisedButton.icon(
+                    padding: EdgeInsets.fromLTRB(2, 2, 2, 2),
+                    icon: Icon(
+                      Icons.add_location_alt,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    textColor: Colors.white,
+                    color: Colors.black12,
+                    label: Text('Address/पता'),
+                    onPressed: () {
+                      _getCurrentLocation();
+                    },
+                  ),
+                ],
+              ),
             ),
 
             //food habits
@@ -470,6 +513,7 @@ class _RegistrationDetails extends State<StatefulWidget> {
           leftimageURI = recordedImage;
           leftButtonText = 'Processing to save';
         });
+
         GallerySaver.saveImage(recordedImage.path, albumName: albumName)
             .then((bool success) {
           setState(() {
@@ -478,6 +522,7 @@ class _RegistrationDetails extends State<StatefulWidget> {
             leftButtonText = 'Left Eye Image Saved';
           });
         });
+
       }
     });
   }
@@ -502,21 +547,34 @@ class _RegistrationDetails extends State<StatefulWidget> {
       }
     });
   }
+
+  _getCurrentLocation() async {
+    await geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best)
+        .then((Position position) {
+      setState(() {
+        _currentPosition = position;
+      });
+
+      _getAddressFromLatLng();
+    }).catchError((e) {
+      print(e);
+    });
+  }
+
+  _getAddressFromLatLng() async {
+    try {
+      List<Placemark> p = await geolocator.placemarkFromCoordinates(
+          _currentPosition.latitude, _currentPosition.longitude);
+
+      Placemark place = p[0];
+
+      setState(() {
+        _currentAddress =
+        "${place.locality}, ${place.postalCode}, ${place.country}";
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
 }
-
-/*
-Widget _googlemap(BuildContext context){
-  return Container(
-    height: MediaQuery.of(context).size.height,
-    width: MediaQuery.of(context).size.width,
-    child: GoogleMap(
-      mapType: MapType.normal,
-      initialCameraPosition: CameraPosition(target: LatLng(21.2787, 81.8661),zoom: 12),
-      onMapCreated: (GoogleMapController controller){
-        var _controller;
-        _controller.complete(controller);
-      },
-
-    ),
-  );
-}*/
